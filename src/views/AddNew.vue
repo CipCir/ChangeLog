@@ -38,7 +38,7 @@
       </div>
       <div class="row">
         <button type="submit" class="btn green lighten-1">Save</button>
-        <router-link to="/" class="btn grey right">Cancel</router-link>
+        <button type="button" @click="$emit('EditorUpd','')" class="btn grey right">Cancel</button>
       </div>
     </form>
   </div>
@@ -89,7 +89,8 @@ export default {
           if (error) {
             console.log(error);
           } else {
-            vueObj.$router.push("/");
+            // vueObj.$router.push("/");
+            vueObj.$emit('EditorUpd',"")
             console.log("task added");
           }
         }

@@ -1,13 +1,6 @@
 <template>
   <div class="pageCont">
-    <div class="row">
-      <div class="col m2">
-        <label for>Select DB</label>
-        <select @change="readDB()" v-model="SelectedDB" class="browser-default teal lighten-4">
-          <option v-for="opt in AppsArr" :key="opt" :value="opt">{{opt}}</option>
-        </select>
-      </div>
-    </div>
+   
     <div class="row">
       <div id="treeCont" class="col s12 m6 z-depth-1">
         <div class="vers" v-for="itm in DBObj" :key="itm.vers">
@@ -41,32 +34,30 @@
           </div>
         </div>
       </div>
-      <div id="EditorCont" class="col s12 m6 deep-purple lighten-5">
-        Editor
-        <div v-if="selctedRec!=null" class="container">
-          <div class="row">
-            <label>Title</label>
-            <textarea v-model="selctedRec.Title"></textarea>
-          </div>
-          <div class="row">
-            <label>Description</label>
-            <textarea v-model="selctedRec.descript"></textarea>
-          </div>
-          <div class="row">
-            <div class="btn" @click="UpdateR()">Update</div>
-            <div class="btn red right" @click="DeleteR()">
-              <i class="material-icons left">delete_forever</i>
-              Delete
-            </div>
-          </div>
-        </div>
+      <div id="EditorCont" class="col s12 m6 deep-purple lighten-5 z-depth-1">
+        
+        <EditSel
+         v-if="Editor=='Edit'"
+         :selctedRec="selctedRec"
+         :SelectedDB="SelectedDB"
+         v-on:SelectionReset="ResetSelection()"
+        />
+       
+        <Addnew 
+        v-if="Editor=='AddNew'"
+        :SelectedDB="SelectedDB"
+        v-on:EditorUpd="UpdateEditor($event)"
+        />
       </div>
       <!-- add new -->
     </div>
     <div class="navigation">
-      <router-link to="/AddNew" class="btn-floating btn-large right waves-effect waves-light blue">
+      <span 
+      @click="Editor='AddNew'"
+      v-if="Editor!='AddNew'"
+      class="btn-floating btn-large right waves-effect waves-light blue">
         <i class="material-icons">add</i>
-      </router-link>
+      </span>
     </div>
   </div>
 </template>
@@ -75,75 +66,41 @@
 // @ is an alias to /src
 // import HelloWorld from '@/components/HelloWorld.vue'
 import DataB from "../firebase/init.js";
+import Addnew from "./AddNew"
+import EditSel from "./EditSelected"
 
 export default {
-  name: "home",
-  // props: {
-  //   dbName: String
-  // },
+  name: "treeView",
+  components:{Addnew,EditSel},
+  props: {
+    DBObj: Array,
+    SelectedDB: String
+  },
   data() {
     return {
-      version: "",
-      SelectedDB: "",
-      AppsArr: ["Template"],
-
-      DBObj: [],
+      Editor:null,
+      // DBObj: [],
       selctedRec: null
     };
   },
 
   methods: {
-    readDB() {
-      var vueOBJ = this;
-
-      function sortVers(a, b) {
-        if (a.vers > b.vers) return -1;
-        if (a.vers < b.vers) return 1;
-        return 0;
-      }
-
-      DataB.ref(vueOBJ.SelectedDB).on("value", snapshot => {
-        vueOBJ.DBObj = [];
-        const SnapObj = snapshot.val();
-        for (var prop in SnapObj) {
-          const Data = {
-            vers: prop,
-            lvls: SnapObj[prop],
-            expanded: false
-          };
-          vueOBJ.DBObj.push(Data);
-        }
-        vueOBJ.DBObj.sort(sortVers);
-        //expand the first element
-        vueOBJ.DBObj[0].expanded = true;
-        // vueOBJ.DBObj = JSON.parse(JSON.stringify(snapshot.val()));
-      });
+    ResetSelection(){
+      this.selctedRec=null,
+      this.Editor=""
+    },
+    UpdateEditor(pay) {
+      this.Editor=pay
     },
     SelectRec(rec, p, p1, p2, p3) {
       this.selctedRec = JSON.parse(JSON.stringify(rec));
       this.selctedRec.id = p + "/" + p1 + "/" + p2 + "/" + p3;
+      this.selctedRec.lvl_0=p.replace("_",".")
+      this.selctedRec.lvl_1=p1
+      this.selctedRec.lvl_2=p2
+      this.Editor="Edit"
     },
-    UpdateR() {
-      let vueOBJ = this;
-      DataB.ref(vueOBJ.SelectedDB + "/" + vueOBJ.selctedRec.id)
-        .update({
-          Title: vueOBJ.selctedRec.Title,
-          descript: vueOBJ.selctedRec.descript
-        })
-        .then(stat => {
-          console.log("update done");
-          vueOBJ.selctedRec = null;
-        });
-    },
-    DeleteR() {
-      let vueOBJ = this;
-      DataB.ref(vueOBJ.SelectedDB + "/" + vueOBJ.selctedRec.id)
-        .remove()
-        .then(stat => {
-          console.log("update done");
-          vueOBJ.selctedRec = null;
-        });
-    }
+   
   }
 };
 </script>
